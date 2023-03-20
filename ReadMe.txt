@@ -1,3 +1,3 @@
-로컬PC의 경로
+Path on Local PC
 C:\Users\Sahngwoon.Lee\source\repos\WebCrawler
 
