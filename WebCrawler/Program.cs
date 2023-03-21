@@ -35,6 +35,7 @@ namespace WebCrawler
                 // 블로그 URL로 접속
                 driver.Url = "https://nowonbun.tistory.com";
 
+                /*
                 // 대기 설정. (find로 객체를 찾을 때까지 검색이 되지 않으면 대기하는 시간 초단위)
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
 
@@ -89,6 +90,7 @@ namespace WebCrawler
                     // 속성의 NodeText를 전부 출력한다.
                     Console.WriteLine(ele.Text);
                 }
+                */
             }
             // 아무 키나 누르면 종료
             Console.WriteLine("Press any key...");
