@@ -4,97 +4,120 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium;
 
 namespace WebCrawler
 {
+
     static class Program
     {
-        // driver를 Script 실행 인터페이스로 변환
-        static IJavaScriptExecutor Script(this IWebDriver driver)
+        /*
+        static void ExecuteScript(IJavaScriptExecutor driver, string script)
         {
-            return (IJavaScriptExecutor)driver;
+            IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+            js.ExecuteScript(script);
         }
-
-        // 스크립트 클릭 함수
-        static void ClickScript(this IWebDriver driver, IWebElement element)
-        {
-            // 스크립트 클릭
-            driver.Script().ExecuteScript("arguments[0].click();", element);
-        }
-
-
+        */
+        
 
         static void Main(string[] args)
         {
-            // ChomeDriver 인스턴스 생성
-            // 스택 영역이 종료되면 자동으로 Chrome 브라우저는 닫힌다.
-            using (IWebDriver driver = new ChromeDriver())
+            // ChomeDriver 인스턴스 생성                        
+            ChromeOptions options = new ChromeOptions();
+            options.AddArguments("--test-type");
+            options.AddArguments("--ignore-certificate-errors");
+                                    
+            using ( IWebDriver driver = new ChromeDriver(options) )
             {
-                // 블로그 URL로 접속
-                driver.Url = "https://nowonbun.tistory.com";
+                // 블로그 URL로 접속 
+                driver.Url = "https://www.etnews.com/20230331000229";
 
-                /*
                 // 대기 설정. (find로 객체를 찾을 때까지 검색이 되지 않으면 대기하는 시간 초단위)
                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
 
-                // xpath로 element를 찾는다. 이 xpath는 명월 일지 블로그의 왼쪽 메뉴의 Dev note의 Javascript, Jquery, Css 카테고리다.
-                var element = driver.FindElement(By.XPath("//*[@id='leftside']/div[3]/ul/li/ul/li[1]/ul/li[6]/a"));
+                Thread.Sleep(1000);
 
-                // 클릭한다. 사실 element.Click()로도 클릭이 가능한데 가끔 호환성 에러가 발생하는 경우가 있다.
-                driver.ClickScript(element);
 
-                // css selector로 "[Javascript] 팝업 라이브러리(bootbox)"의 포스트를 찾는다. 찾을 때까지 무한 루프
-                while (true)
+
+            
+
+                IList<IWebElement> links = driver.FindElements(By.TagName("a"));
+                Console.WriteLine(links[0].Text);
+                //links.First(element => element.Text == "English").Click();
+                foreach (var link in links)
                 {
-                    try
+                    Console.WriteLine( link.Text );                    
+                    if (link.Text == "English")
                     {
-                        // css selector로 element를 찾는다.
-                        element = driver.FindElement(By.CssSelector("[href^='/626']"));
-                        // 클릭
-                        driver.ClickScript(element);
-                        // 루프 정지
+                        Console.WriteLine(link.GetAttribute("href"));                        
+                        link.Click();
                         break;
-                    }
-                    catch (Exception)
-                    {
-                        // 해당 element가 없으면 아래의 다음 페이지 element를 찾는다.
-                        element = driver.FindElement(By.CssSelector(".paging li.active+li > a"));
-                        // 클릭
-                        driver.ClickScript(element);
                     }
                 }
 
-                // id가 promptEx인 데이터를 찾는다.
-                element = driver.FindElement(By.XPath("//*[@id='promptEx']"));
-                element.Click();
 
-                // xpath로 팝업의 dom를 찾는다.
-                element = driver.FindElement(By.XPath("/html/body/div[6]/div/div/div[2]/div/form/input"));
-                // input text에 test의 값을 넣는다.
-                element.SendKeys("test");
                 // 5초 기다린다.
                 Thread.Sleep(5000);
 
-                // xpath로 팝업의 dom를 찾는다.
-                element = driver.FindElement(By.XPath("/html/body/div[6]/div/div/div[2]/div/form/input"));
-
-                // 속성 value를 출력한다.
-                Console.WriteLine(element.GetAttribute("value"));
-
-                // .article의 글에 p 태그의 속성을 전부 가져온다.
-                var elements = driver.FindElements(By.CssSelector(".article p"));
-                foreach (var ele in elements)
+                // ezWEB1.5는 기존창 대신에 새창에서 열린다.
+                string originWindow = driver.CurrentWindowHandle;
+                Console.WriteLine(originWindow);
+                foreach (string window in driver.WindowHandles)
                 {
-                    // 속성의 NodeText를 전부 출력한다.
-                    Console.WriteLine(ele.Text);
+                    //새창을 찾는다.
+                    if (originWindow != window)
+                    {
+                        Console.WriteLine(window);
+                        driver.SwitchTo().Window(window);
+                        break;
+                    }
                 }
-                */
+
+
+
+
+                // iFrame 찾기
+                List<IWebElement> frames = new List<IWebElement>(driver.FindElements(By.TagName("iframe")));
+                Console.WriteLine("Number of Frames: " + frames.Count);
+                for (int i = 0; i < frames.Count; i++)
+                {
+                    Console.WriteLine("frame[" + i + "]: " + frames[i].GetAttribute("id").ToString());
+                    //Console.WriteLine("frame[" + i + "]: " + frames[i].GetAttribute("name").ToString());
+                }
+                driver.SwitchTo().Frame("CSLiResultPage");
+
+
+                IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                //js.ExecuteScript("window.open()");
+                js.ExecuteScript("document.getElementsByTagName(\"html\")[0].setAttribute(\"lang\",\"en\") ");
+
+
+
+
+                string aaa = driver.PageSource.ToString();
+                string bbb = aaa.Replace("https://trans.etnews.com", "http://sahngwoon.llsollu.io");
+                Console.WriteLine(bbb);
+
+
+                File.WriteAllText("C:\\Users\\Sahngwoon.Lee\\Downloads\\PageSource.html", bbb);
+                //File.WriteAllText("C:\\Users\\Sahngwoon.Lee\\Downloads\\PageSource.html", driver.PageSource);
+
+                // 5초 기다린다.
+                Thread.Sleep(1000);
+                                                             
+
+                driver.Quit();
+
             }
+           
             // 아무 키나 누르면 종료
             Console.WriteLine("Press any key...");
             Console.ReadKey();
         }
+
     }
 }
+
+
