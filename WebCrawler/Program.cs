@@ -20,7 +20,18 @@ namespace WebCrawler
             js.ExecuteScript(script);
         }
         */
-        
+        static IJavaScriptExecutor Script(this IWebDriver driver)
+        {
+            return (IJavaScriptExecutor)driver;
+        }
+
+        // 스크립트 클릭 함수
+        static void ClickScript(this IWebDriver driver, IWebElement element)
+        {
+            // 스크립트 클릭
+            driver.Script().ExecuteScript("arguments[0].click();", element);
+        }
+
 
         static void Main(string[] args)
         {
@@ -28,12 +39,17 @@ namespace WebCrawler
             ChromeOptions options = new ChromeOptions();
             options.AddArguments("--test-type");
             options.AddArguments("--ignore-certificate-errors");
-                                    
+            //options.AddArguments("--headless");    // 웹브라우저 띄우지 않고...
+
+
             using ( IWebDriver driver = new ChromeDriver(options) )
             {
                 // 블로그 URL로 접속 
                 string strResult = driver.Url = "https://www.geoje.go.kr/index.geoje";   // main URL
                 Console.WriteLine(strResult);
+
+                string parentWindow = driver.CurrentWindowHandle;
+                
 
                 if (driver.Title.IndexOf("missing.html") == -1)
                 {
@@ -45,71 +61,72 @@ namespace WebCrawler
 
 
                     IList<IWebElement> links = driver.FindElements(By.TagName("a"));
-                    Console.WriteLine(links.Count());
+
+                    Console.WriteLine("1-depth : " + links.Count());
                     //links.First(element => element.Text == "English").Click();
+
+
+
+
+                    int k = 0;
                     foreach (var link in links)
                     {
-                        Console.WriteLine(link.Text);
-                        if (link.Text == "English")
+
+                        driver.SwitchTo().Window(parentWindow);
+
+                        if ( k < 4) { k++; continue; }
+                        if (k >= 4)
                         {
+                            //Console.WriteLine(link);
+                            Console.WriteLine(link.Text);
                             Console.WriteLine(link.GetAttribute("href"));
-                            link.Click();
-                            break;
+
+                            //if (link.Text == "관광문화")
+                            {
+                                //link.Click();
+                                driver.ClickScript(link);           /// CLICK!!!!  CLICK!!!!
+
+                                Thread.Sleep(5000);
+
+                                String theLastName = "";
+                                foreach (string window in driver.WindowHandles)
+                                {
+                                    Console.WriteLine("     " + window);
+                                    theLastName = window;
+                                    
+                                }
+                                driver.SwitchTo().Window(theLastName);
+
+                                
+
+                                IList<IWebElement> links2 = driver.FindElements(By.TagName("a"));
+                                Console.WriteLine("     2-depth : " + links2.Count());
+
+                                int l = 0;
+                                foreach (var link2 in links2)
+                                {
+                                    if( l < 3)
+                                    {
+                                        Console.WriteLine("     " + link2.Text);
+                                        Console.WriteLine("     " + link2.GetAttribute("href"));
+                                        l++;
+                                    }
+
+                                }                                
+
+                                
+
+                            }
+
+                            k++;
                         }
+
+                        Thread.Sleep(5000);
+
                     }
+                    
 
-
-                    // 5초 기다린다.
-                    Thread.Sleep(5000);
-
-                    // ezWEB1.5는 기존창 대신에 새창에서 열린다.
-                    string originWindow = driver.CurrentWindowHandle;
-                    Console.WriteLine(originWindow);
-                    foreach (string window in driver.WindowHandles)
-                    {
-                        //새창을 찾는다.
-                        if (originWindow != window)
-                        {
-                            Console.WriteLine(window);
-                            driver.SwitchTo().Window(window);
-                            break;
-                        }
-                    }
-
-                    // iFrame 찾기
-                    List<IWebElement> frames = new List<IWebElement>(driver.FindElements(By.TagName("iframe")));
-                    Console.WriteLine("Number of Frames: " + frames.Count);
-                    var bFoundResultPage = 0;
-                    for (int i = 0; i < frames.Count; i++)
-                    {
-                        Console.WriteLine("frame[" + i + "]: " + frames[i].GetAttribute("id").ToString());
-                        if (frames[i].GetAttribute("id").ToString() == "CSLiResulPage")
-                        {
-                            bFoundResultPage = 1;
-                        }
-                    }
-
-                    if (bFoundResultPage == 1)
-                    {
-                        driver.SwitchTo().Frame("CSLiResultPage");
-
-                        // Change the elements of translated page if necessary
-                        IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
-                        //js.ExecuteScript("window.open()");
-                        js.ExecuteScript("document.getElementsByTagName(\"html\")[0].setAttribute(\"lang\",\"en\") ");
-
-
-                        string aaa = driver.PageSource.ToString();
-                        string bbb = aaa.Replace("https://trans.etnews.com", "http://sahngwoon.llsollu.io");
-                        //Console.WriteLine(bbb);
-
-
-                        File.WriteAllText("C:\\Users\\Sahngwoon.Lee\\Downloads\\PageSource.html", bbb);
-                        //File.WriteAllText("C:\\Users\\Sahngwoon.Lee\\Downloads\\PageSource.html", driver.PageSource);
-
-                        // 5초 기다린다.
-                        Thread.Sleep(1000);
-                    }                    
+                   
                 }
                 driver.Quit();
             }
