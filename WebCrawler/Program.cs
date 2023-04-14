@@ -32,7 +32,7 @@ namespace WebCrawler
             using ( IWebDriver driver = new ChromeDriver(options) )
             {
                 // 블로그 URL로 접속 
-                string strResult = driver.Url = "https://www.etnews.com/20230331000229";   // implicitly  wait until the load is complete.
+                string strResult = driver.Url = "https://www.geoje.go.kr/index.geoje";   // main URL
                 Console.WriteLine(strResult);
 
                 if (driver.Title.IndexOf("missing.html") == -1)
@@ -45,7 +45,7 @@ namespace WebCrawler
 
 
                     IList<IWebElement> links = driver.FindElements(By.TagName("a"));
-                    //Console.WriteLine(links[0].Text);
+                    Console.WriteLine(links.Count());
                     //links.First(element => element.Text == "English").Click();
                     foreach (var link in links)
                     {
