@@ -74,14 +74,13 @@ namespace WebCrawler
 
                         driver.SwitchTo().Window(parentWindow);
 
-                        if ( k < 4) { k++; continue; }
-                        if (k >= 4)
+                        
                         {
                             //Console.WriteLine(link);
                             Console.WriteLine(link.Text);
                             Console.WriteLine(link.GetAttribute("href"));
 
-                            //if (link.Text == "관광문화")
+                            if( ( link.GetAttribute("href").IndexOf("#") == -1 ) || ( link.GetAttribute("href").Contains("etgi") == false ) )
                             {
                                 //link.Click();
                                 driver.ClickScript(link);           /// CLICK!!!!  CLICK!!!!
