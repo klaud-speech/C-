@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Support.UI;
 using OpenQA.Selenium;
 
 namespace WebCrawler
@@ -32,6 +33,11 @@ namespace WebCrawler
             driver.Script().ExecuteScript("arguments[0].click();", element);
         }
 
+        static void setAttribute(this IWebDriver driver, IWebElement element, String attName, String attValue)
+        {
+            driver.Script().ExecuteScript("arguments[0].setAttribute(arguments[1], arguments[2]);",  element, attName, attValue);
+        }
+
 
         static void Main(string[] args)
         {
@@ -39,13 +45,13 @@ namespace WebCrawler
             ChromeOptions options = new ChromeOptions();
             options.AddArguments("--test-type");
             options.AddArguments("--ignore-certificate-errors");
-            //options.AddArguments("--headless");    // 웹브라우저 띄우지 않고...
+            options.AddArguments("--headless");    // 웹브라우저 띄우지 않고...
 
 
             using ( IWebDriver driver = new ChromeDriver(options) )
             {
                 // 블로그 URL로 접속 
-                string strResult = driver.Url = "https://www.geoje.go.kr/index.geoje";   // main URL
+                string strResult = driver.Url = "https://www.geoje.go.kr/index.geoje?contentsSid=12979";   // main URL..... 0-th level...
                 Console.WriteLine(strResult);
 
                 string parentWindow = driver.CurrentWindowHandle;
@@ -55,9 +61,9 @@ namespace WebCrawler
                 {
 
                     // 대기 설정. (find로 객체를 찾을 때까지 검색이 되지 않으면 대기하는 시간 초단위)
-                    driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+                    driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
 
-                    Thread.Sleep(1000);
+                    
 
 
                     IList<IWebElement> links = driver.FindElements(By.TagName("a"));
@@ -69,40 +75,97 @@ namespace WebCrawler
 
 
                     int k = 0;
-                    foreach (var link in links)
+                    bool bNewWindow = false;
+                    IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                    foreach (var link in links)            //  foreach  1-level.....
                     {
+                        if (bNewWindow == true) {
+                            //if(driver.WindowHandles.Count() == 2)
+                            Console.WriteLine("pWindow " + parentWindow);
+                            driver.SwitchTo().Window(parentWindow);  // Forcus return to MainWindow
+                            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                        }
+                        else
+                        {
+                            if( k > 0)
+                            {                                
+                                js.ExecuteScript("window.history.go(-1)");
+                                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                            }
+                        }
 
-                        driver.SwitchTo().Window(parentWindow);
+                        Console.WriteLine("1-de pth: " + k + " of " + links.Count()  );
 
-                        
                         {
                             //Console.WriteLine(link);
                             Console.WriteLine(link.Text);
+                            if (link.Text == "Korea" || link.Text=="LANGUAGE" || link.Text == "English" || link.Text == "中文" || link.Text == "日文")
+                                continue;
+
+
                             Console.WriteLine(link.GetAttribute("href"));
-
-                            if( ( link.GetAttribute("href").IndexOf("#") == -1 ) || ( link.GetAttribute("href").Contains("etgi") == false ) )
+                            if( link.GetAttribute("href").IndexOf("geoje.go.kr") == -1)
                             {
-                                //link.Click();
-                                driver.ClickScript(link);           /// CLICK!!!!  CLICK!!!!
+                                continue;
+                            }
 
-                                Thread.Sleep(5000);
+                            if (link.GetAttribute("href").IndexOf("#") != -1){
+                                continue;
+                            }
 
-                                String theLastName = "";
-                                foreach (string window in driver.WindowHandles)
+
+                            if ( link.GetAttribute("href").Contains("llsollu") == false  )
+                            {
+
+                                //모든 URL을 '새탭'으로 
+                                if (link.GetAttribute("target").IndexOf("_blank") != -1)
                                 {
-                                    Console.WriteLine("     " + window);
-                                    theLastName = window;
-                                    
+                                    bNewWindow = true;
                                 }
-                                driver.SwitchTo().Window(theLastName);
+                                else
+                                {
+                                    bNewWindow = false;
+                                    setAttribute(driver, link, "target", "_blank");        
+                                    bNewWindow = true;
+                                }
 
+                                //link.Click();
+                                driver.ClickScript(link);           /// **** CLICK!!!!  CLICK!!!!  1-level...
+
+                                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(20);
+                                //WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(20));
                                 
+                                
+
+
+
+
+                                if (bNewWindow == true )  // 새창...WindowHandle    new tab or new window
+                                {
+                                    String theLastName = "";
+                                    int nWindow = 0;
+                                    foreach (string window in driver.WindowHandles)
+                                    {
+                                        Console.WriteLine("     [" + nWindow + "]" + window);
+                                        theLastName = window;
+                                        nWindow++;
+                                    }
+                                    Console.WriteLine("p     " +  parentWindow );
+                                    driver.SwitchTo().Window(theLastName);                    // Forcus to the 'new tab'
+                                    Console.WriteLine("c     " + driver.CurrentWindowHandle);
+                                }
+                                else
+                                {
+                                    driver.SwitchTo().Window( driver.CurrentWindowHandle );
+                                }
+
+
 
                                 IList<IWebElement> links2 = driver.FindElements(By.TagName("a"));
                                 Console.WriteLine("     2-depth : " + links2.Count());
 
                                 int l = 0;
-                                foreach (var link2 in links2)
+                                foreach (var link2 in links2)                               // 2-level...
                                 {
                                     if( l < 3)
                                     {
@@ -111,22 +174,41 @@ namespace WebCrawler
                                         l++;
                                     }
 
-                                }                                
+                                }
 
-                                
+                                Console.WriteLine("     2-depth : " + "DONE!!!");
 
                             }
 
-                            k++;
+                    
+                        }
+                        if (bNewWindow == true) {
+                            if (driver.WindowHandles.Count() >= 2)
+                            {
+                                foreach (string window in driver.WindowHandles)
+                                {
+                                    Console.WriteLine("p     " + parentWindow);
+                                    if (window != parentWindow)
+                                    {
+                                        driver.SwitchTo().Window(window);
+                                        driver.Close();
+                                    }
+                                }
+                            }
                         }
 
-                        Thread.Sleep(5000);
+                        k++;
+
+                        //if (driver.WindowHandles.Count() >= 2)
+                        //    return;
 
                     }
+
                     
 
-                   
                 }
+                driver.SwitchTo().Window(parentWindow);
+                driver.Close();
                 driver.Quit();
             }
            
