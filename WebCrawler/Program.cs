@@ -47,6 +47,16 @@ namespace WebCrawler
             options.AddArguments("--ignore-certificate-errors");
             options.AddArguments("--headless");    // 웹브라우저 띄우지 않고...
 
+            
+
+            //Testing Dictionary...
+            Dictionary<string, string> myHref1 = new Dictionary<string, string>();
+            Dictionary<string, string> myHref2 = new Dictionary<string, string>();
+            Dictionary<string, string> myHref3 = new Dictionary<string, string>();
+
+
+
+
 
             using ( IWebDriver driver = new ChromeDriver(options) )
             {
@@ -61,7 +71,7 @@ namespace WebCrawler
                 {
 
                     // 대기 설정. (find로 객체를 찾을 때까지 검색이 되지 않으면 대기하는 시간 초단위)
-                    driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                    driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(30);
 
                     
 
@@ -75,6 +85,7 @@ namespace WebCrawler
 
 
                     int k = 0;
+                    int nTotalCount2 = 0;
                     bool bNewWindow = false;
                     IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
                     foreach (var link in links)            //  foreach  1-level.....
@@ -87,107 +98,133 @@ namespace WebCrawler
                         }
                         else
                         {
-                            if( k > 0)
+                            if( k > 1)
                             {                                
                                 js.ExecuteScript("window.history.go(-1)");
                                 driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
                             }
                         }
 
-                        Console.WriteLine("1-de pth: " + k + " of " + links.Count()  );
+                        
 
+                        Console.WriteLine(">>>  1-depth: " + k + " of " + links.Count()  );
+
+                       
+                        //Console.WriteLine(link);
+                        Console.WriteLine(link.Text);
+                        if (link.Text == "Korea" || link.Text == "LANGUAGE" || link.Text == "English" || link.Text == "中文" || link.Text == "日文")
                         {
-                            //Console.WriteLine(link);
-                            Console.WriteLine(link.Text);
-                            if (link.Text == "Korea" || link.Text=="LANGUAGE" || link.Text == "English" || link.Text == "中文" || link.Text == "日文")
-                                continue;
+                            k++;
+                            continue;
+                        }
 
 
-                            Console.WriteLine(link.GetAttribute("href"));
-                            if( link.GetAttribute("href").IndexOf("geoje.go.kr") == -1)
+                        Console.WriteLine(link.GetAttribute("href"));
+                        if( link.GetAttribute("href").IndexOf("geoje.go.kr") == -1)
+                        {
+                            k++;
+                            continue;
+                        }
+
+                        if (link.GetAttribute("href").IndexOf("#") != -1){
+                            k++;
+                            continue;
+                        }
+
+
+                        if ( link.GetAttribute("href").Contains("llsollu") == false  )
+                        {
+
+                            //모든 URL을 '새탭'으로 
+                            if (link.GetAttribute("target").IndexOf("_blank") != -1)
                             {
-                                continue;
+                                bNewWindow = true;
                             }
-
-                            if (link.GetAttribute("href").IndexOf("#") != -1){
-                                continue;
-                            }
-
-
-                            if ( link.GetAttribute("href").Contains("llsollu") == false  )
+                            else
                             {
+                                bNewWindow = false;
+                                setAttribute(driver, link, "target", "_blank");        
+                                bNewWindow = true;
+                            }
 
-                                //모든 URL을 '새탭'으로 
-                                if (link.GetAttribute("target").IndexOf("_blank") != -1)
+                            //link.Click();
+                            driver.ClickScript(link);           /// **** CLICK!!!!  CLICK!!!!  1-level...
+
+                            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(30);
+                            //WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(20));
+
+                            string href1, title1;
+                            href1  = link.GetAttribute("href");
+                            title1 = link.Text;
+                            if (myHref2.ContainsKey(href1) == false)
+                                myHref2.Add(href1, title1 );
+
+
+                            if (bNewWindow == true )  // 새창...WindowHandle    new tab or new window
+                            {
+                                String theLastName = "";
+                                int nWindow = 0;
+                                foreach (string window in driver.WindowHandles)
                                 {
-                                    bNewWindow = true;
+                                    //Console.WriteLine("     [" + nWindow + "]" + window);
+                                    theLastName = window;
+                                    nWindow++;
                                 }
-                                else
-                                {
-                                    bNewWindow = false;
-                                    setAttribute(driver, link, "target", "_blank");        
-                                    bNewWindow = true;
-                                }
+                                //Console.WriteLine("p     " +  parentWindow );
+                                driver.SwitchTo().Window(theLastName);                    // Forcus to the 'new tab'
+                                //Console.WriteLine("c     " + driver.CurrentWindowHandle);
+                            }
+                            else
+                            {
+                                driver.SwitchTo().Window( driver.CurrentWindowHandle );
+                            }
 
-                                //link.Click();
-                                driver.ClickScript(link);           /// **** CLICK!!!!  CLICK!!!!  1-level...
 
-                                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(20);
-                                //WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(20));
+
+                            IList<IWebElement> links2 = driver.FindElements(By.TagName("a"));
+                            nTotalCount2 += links2.Count();
+
+                            Console.WriteLine("     2-depth : " + links2.Count()   + ">>>> Total2 = " + nTotalCount2   + "<<<<< myHref2.Count = " + myHref2.Count );
+
+
+                            int l = 0;
+                            string href2, title2;
+                            foreach (var link2 in links2)                               // 2-level...
+                            {
+                                href2  = "";
+                                title2 = "";
                                 
+                                if( l < 10)
+                                {
+                                    href2  = link2.GetAttribute("href");
+                                    title2 = link2.Text;
+                                    Console.WriteLine("     T" + title2 );
+                                    Console.WriteLine("     R" + href2 );
+                                        
+                                }
+                                Console.WriteLine("           l = " + l);
                                 
 
+                                if( myHref2.ContainsKey( href2  ) == false )
+                                    myHref2.Add( href2 , title2);
 
 
-
-                                if (bNewWindow == true )  // 새창...WindowHandle    new tab or new window
-                                {
-                                    String theLastName = "";
-                                    int nWindow = 0;
-                                    foreach (string window in driver.WindowHandles)
-                                    {
-                                        Console.WriteLine("     [" + nWindow + "]" + window);
-                                        theLastName = window;
-                                        nWindow++;
-                                    }
-                                    Console.WriteLine("p     " +  parentWindow );
-                                    driver.SwitchTo().Window(theLastName);                    // Forcus to the 'new tab'
-                                    Console.WriteLine("c     " + driver.CurrentWindowHandle);
-                                }
-                                else
-                                {
-                                    driver.SwitchTo().Window( driver.CurrentWindowHandle );
-                                }
-
-
-
-                                IList<IWebElement> links2 = driver.FindElements(By.TagName("a"));
-                                Console.WriteLine("     2-depth : " + links2.Count());
-
-                                int l = 0;
-                                foreach (var link2 in links2)                               // 2-level...
-                                {
-                                    if( l < 3)
-                                    {
-                                        Console.WriteLine("     " + link2.Text);
-                                        Console.WriteLine("     " + link2.GetAttribute("href"));
-                                        l++;
-                                    }
-
-                                }
-
-                                Console.WriteLine("     2-depth : " + "DONE!!!");
+                                l++;
 
                             }
+
+                            Console.WriteLine("     2-depth : " + "DONE!!!");
+
+                        }
 
                     
-                        }
+                        
                         if (bNewWindow == true) {
                             if (driver.WindowHandles.Count() >= 2)
                             {
                                 foreach (string window in driver.WindowHandles)
                                 {
-                                    Console.WriteLine("p     " + parentWindow);
+                                    //Console.WriteLine("p     " + parentWindow);
                                     if (window != parentWindow)
                                     {
                                         driver.SwitchTo().Window(window);
@@ -210,8 +247,103 @@ namespace WebCrawler
                 driver.SwitchTo().Window(parentWindow);
                 driver.Close();
                 driver.Quit();
+
+
             }
-           
+
+
+
+            Console.WriteLine("Total key/value pairs in" +
+                    " myHref2 are : " + myHref2.Count);
+
+            //FileStream F = new FileStream("test.dat", FileMode.OpenOrCreate,   FileAccess.ReadWrite);
+
+            var outputFile1 = new StreamWriter("D:\\aaa1.txt");
+            int c = 0;
+
+            foreach (KeyValuePair<string, string> kvp1 in myHref1)
+            {
+                if (c < 10)
+                    Console.WriteLine("Key1 = {0}, Value1 = {1}", kvp1.Key, kvp1.Value);
+
+                outputFile1.WriteLine("{0}\t{1}", kvp1.Key, kvp1.Value);
+
+                c++;
+            }
+            outputFile1.Close();
+
+            var outputFile2 = new StreamWriter("D:\\aaa2.txt");
+            c = 0;
+            foreach (KeyValuePair<string, string> kvp2 in myHref2)
+            {
+                if( c < 10 )
+                    Console.WriteLine("Key2 = {0}, Value2 = {1}",       kvp2.Key, kvp2.Value);
+
+                outputFile2.WriteLine("{0}\t{1}", kvp2.Key, kvp2.Value);
+
+                c++;
+            }
+            outputFile2.Close();
+            //F.Close();
+
+
+            // 2 level -> 3 level.
+            using (IWebDriver driver = new ChromeDriver(options))
+            {
+                int nTotalCount3 = 0;
+                foreach (KeyValuePair<string, string> kvp2 in myHref2)
+                {
+                    Console.WriteLine("[2].........." + kvp2.Key);
+                    string href2 = kvp2.Key;
+
+
+                    if (href2.IndexOf("geoje.go.kr") == -1)
+                    {                     
+                        continue;
+                    }
+
+                    driver.Url = href2;
+                    string parentWindow = driver.CurrentWindowHandle;
+                    driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(50);
+
+                    IList<IWebElement> links3 = driver.FindElements(By.TagName("a"));
+                    nTotalCount3 += links3.Count();
+                    Console.WriteLine("3-depth : " + links3.Count()  + "......." + nTotalCount3);
+
+                    string href3, title3;
+                    foreach (var link3 in links3)                           
+                    {
+                        href3 = "";
+                        title3 = "";
+
+                        //if (l < 10)
+                        {
+                            href3 = link3.GetAttribute("href");
+                            title3 = link3.Text;
+                        }
+
+                        if (myHref3.ContainsKey(href3) == false)
+                            myHref3.Add(href3, title3);                        
+
+                    }
+
+                }
+            }
+
+            var outputFile3 = new StreamWriter("D:\\aaa3.txt");
+            c = 0;
+            foreach (KeyValuePair<string, string> kvp3 in myHref3)
+            {
+                if (c < 10)
+                    Console.WriteLine("Key2 = {0}, Value2 = {1}", kvp3.Key, kvp3.Value);
+
+                outputFile2.WriteLine("{0}\t{1}", kvp3.Key, kvp3.Value);
+
+                c++;
+            }
+            outputFile3.Close();
+
+
             // 아무 키나 누르면 종료
             Console.WriteLine("Press any key...");
             Console.ReadKey();

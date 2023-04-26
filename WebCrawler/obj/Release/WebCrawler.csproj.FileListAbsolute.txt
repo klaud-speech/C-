@@ -1,0 +1,13 @@
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\bin\Release\selenium-manager\linux\selenium-manager
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\bin\Release\selenium-manager\macos\selenium-manager
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\bin\Release\selenium-manager\windows\selenium-manager.exe
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\bin\Release\WebCrawler.exe.config
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\bin\Release\WebCrawler.exe
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\bin\Release\WebCrawler.pdb
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\bin\Release\WebDriver.dll
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\bin\Release\WebDriver.Support.dll
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\obj\Release\WebCrawler.csprojAssemblyReference.cache
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\obj\Release\WebCrawler.csproj.CoreCompileInputs.cache
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\obj\Release\WebCrawler.csproj.CopyComplete
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\obj\Release\WebCrawler.exe
+C:\Users\Sahngwoon.Lee\source\repos\WebCrawler\WebCrawler\obj\Release\WebCrawler.pdb
