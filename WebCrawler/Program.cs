@@ -46,8 +46,10 @@ namespace WebCrawler
             options.AddArguments("--test-type");
             options.AddArguments("--ignore-certificate-errors");
             options.AddArguments("--headless");    // 웹브라우저 띄우지 않고...
+            options.AddArguments("--log-level=3");  // INFO = 0, WARNING = 1, LOG_ERROR = 2, LOG_FATAL = 3
 
-            
+
+
 
             //Testing Dictionary...
             Dictionary<string, string> myHref1 = new Dictionary<string, string>();
@@ -61,7 +63,8 @@ namespace WebCrawler
             using ( IWebDriver driver = new ChromeDriver(options) )
             {
                 // 블로그 URL로 접속 
-                string strResult = driver.Url = "https://www.geoje.go.kr/index.geoje?contentsSid=12979";   // main URL..... 0-th level...
+                //string strResult = driver.Url = "https://www.geoje.go.kr/index.geoje?contentsSid=12979";   // main URL..... 0-th level...
+                string strResult = driver.Url = "https://tour.geoje.go.kr";   // main URL..... 0-th level...
                 Console.WriteLine(strResult);
 
                 string parentWindow = driver.CurrentWindowHandle;
@@ -131,6 +134,24 @@ namespace WebCrawler
                             continue;
                         }
 
+                    
+
+                        if (link.GetAttribute("href").IndexOf("tour.geoje.go.kr") != -1)   // 거제시청 특수 케이스 회피..( 남부면 관광지..)
+                        {
+                            k++;
+                            continue;
+                        }
+
+                        if( link.Text=="남부면 관광지")
+                        {
+                            k++;
+                            continue;
+                        }
+
+
+                        if (myHref1.ContainsKey(link.GetAttribute("href") ) == false)  //Dictionary
+                            myHref1.Add(link.GetAttribute("href"), link.Text);
+
 
                         if ( link.GetAttribute("href").Contains("llsollu") == false  )
                         {
@@ -153,11 +174,12 @@ namespace WebCrawler
                             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(30);
                             //WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(20));
 
+
                             string href1, title1;
                             href1  = link.GetAttribute("href");
                             title1 = link.Text;
-                            if (myHref2.ContainsKey(href1) == false)
-                                myHref2.Add(href1, title1 );
+                            if (myHref1.ContainsKey(href1) == false)
+                                myHref1.Add(href1, title1 );
 
 
                             if (bNewWindow == true )  // 새창...WindowHandle    new tab or new window
@@ -176,7 +198,7 @@ namespace WebCrawler
                             }
                             else
                             {
-                                driver.SwitchTo().Window( driver.CurrentWindowHandle );
+                                driver.SwitchTo().Window( parentWindow );
                             }
 
 
@@ -191,25 +213,28 @@ namespace WebCrawler
                             string href2, title2;
                             foreach (var link2 in links2)                               // 2-level...
                             {
-                                href2  = "";
-                                title2 = "";
+                                 //href2  = "";
+                                 //title2 = "";
+
+
+                                 href2 = link2.GetAttribute("href");
+                                 title2 = link2.Text;
                                 
-                                if( l < 10)
+                                /*
+                                if (l == 0)
                                 {
-                                    href2  = link2.GetAttribute("href");
-                                    title2 = link2.Text;
-                                    Console.WriteLine("     T" + title2 );
-                                    Console.WriteLine("     R" + href2 );
-                                        
+                                    Console.WriteLine("     T" + title2);
+                                    Console.WriteLine("     R" + href2  + " <<< " + href1 );
+                                    Console.WriteLine("           l = " + l);
                                 }
-                                Console.WriteLine("           l = " + l);
+                                */
                                 
 
                                 if( myHref2.ContainsKey( href2  ) == false )
                                     myHref2.Add( href2 , title2);
 
 
-                                l++;
+                                //l++;
 
                             }
 
@@ -302,25 +327,45 @@ namespace WebCrawler
                         continue;
                     }
 
+                    if ( href2.IndexOf("tour.geoje.go.kr") != -1)   // 거제시청 특수 케이스 회피..( 남부면 관광지..)
+                    {                        
+                        continue;
+                    }
+
                     driver.Url = href2;
                     string parentWindow = driver.CurrentWindowHandle;
                     driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(50);
 
                     IList<IWebElement> links3 = driver.FindElements(By.TagName("a"));
                     nTotalCount3 += links3.Count();
-                    Console.WriteLine("3-depth : " + links3.Count()  + "......." + nTotalCount3);
+                    Console.WriteLine("            3-depth : " + links3.Count()  + "......." + nTotalCount3);
 
                     string href3, title3;
+                    int p = 0;
                     foreach (var link3 in links3)                           
                     {
                         href3 = "";
                         title3 = "";
 
-                        //if (l < 10)
+                        if( (link3 != null)  && (link3.Text != null) )
                         {
                             href3 = link3.GetAttribute("href");
                             title3 = link3.Text;
                         }
+
+                        if( p == 0)
+                        {
+                            Console.WriteLine("         T" + title3);
+                            Console.WriteLine("         R" + href3);
+                            Console.WriteLine("           p = " + p);
+                        }
+                        p++;
+
+                        if ( href3.IndexOf("https://") == -1  )
+                            continue;
+
+                        if (href3.IndexOf("https://") == -1)
+                            continue;
 
                         if (myHref3.ContainsKey(href3) == false)
                             myHref3.Add(href3, title3);                        
